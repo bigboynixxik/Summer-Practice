@@ -1,16 +1,25 @@
+import os
 import time
 
 import cv2 as cv
+import matplotlib.pyplot as plt
+import numpy as np
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QFont
-from PyQt5.QtWidgets import QLabel, QWidget, QMenuBar, QMenu, QStatusBar, QAction, QFileDialog, QApplication
+from PyQt5.QtWidgets import QLabel, QWidget, QMenuBar, QMenu, QStatusBar, QAction, QFileDialog, QApplication, \
+    QMainWindow
+
 BASE_IMAGES_DIR = './Images/'
-BASE_NAME = 'cam.png'
+BASE_IMAGE_NAME = 'cam.png'
+BASE_CHANGE_IMAGE_NAME = 'result.png'
 
 
 class UiMainWindow(object):
-    def __init__(self, main_window):
+    def __init__(self, main_window: QMainWindow):
+        self.actionShowGreenChannel = None
+        self.actionShowBlueChannel = None
+        self.actionShowRedChannel = None
         self.file_name = None
         self.MainWindow = main_window
         self.label = None
@@ -26,6 +35,11 @@ class UiMainWindow(object):
         self.actionWebCam = None
 
     def setup_ui(self):
+        """
+        Содержит всю информацию об окне.
+        Настраивается вся информация о геометрии, о меню.
+        :return:
+        """
         self.MainWindow.setObjectName("MainWindow")
         self.MainWindow.resize(1280, 720)
 
@@ -70,8 +84,6 @@ class UiMainWindow(object):
             color: #ffffff;
         }
         """)
-        # self.menubar.setStyleSheet("QMenuBar::item:selected { background-color: #3d3d3d; color: #ffffff; }")
-        # self.menubar.setStyleSheet("QMenuBar::item:pressed { background-color: #aaaaaa; color: #ffffff; }")
 
         # Установка пункта File
         self.menuFile = QMenu(self.menubar)
@@ -107,12 +119,27 @@ class UiMainWindow(object):
         self.actionWebCam.setObjectName("actionLoad_from_WebCam")
         self.actionWebCam.triggered.connect(lambda: self.make_photo_by_web_cam())
 
+        self.actionShowRedChannel = QAction(self.MainWindow)
+        self.actionShowRedChannel.setObjectName("showRedChannel")
+        self.actionShowRedChannel.triggered.connect(lambda: self.show_red_channel())
+
+        self.actionShowGreenChannel = QAction(self.MainWindow)
+        self.actionShowGreenChannel.setObjectName("showGreenChannel")
+
+        self.actionShowBlueChannel = QAction(self.MainWindow)
+        self.actionShowBlueChannel.setObjectName("showBlueChannel")
+
         self.actionGet_info_about = QAction(self.MainWindow)
         self.actionGet_info_about.setObjectName("actionGet_info_about")
 
         self.menuFile.addAction(self.actionOpen)
         self.menuFile.addAction(self.actionSave)
         self.menuFile.addAction(self.actionWebCam)
+
+        self.menuEdit.addAction(self.actionShowRedChannel)
+        self.menuEdit.addAction(self.actionShowGreenChannel)
+        self.menuEdit.addAction(self.actionShowBlueChannel)
+
         self.menuInfo.addAction(self.actionGet_info_about)
 
         self.menubar.addAction(self.menuFile.menuAction())
@@ -120,14 +147,15 @@ class UiMainWindow(object):
         self.menubar.addAction(self.menuInfo.menuAction())
 
         # Создание поля с отображением фотографии
-        self.label = QLabel(self.central_widget)
-        self.label.setGeometry(QtCore.QRect(160, 30, 911, 591))
-
         self.label_text = QLabel(self.central_widget)
         self.label_text.setFont(QFont('Arial', 40))
         self.label_text.setGeometry(QtCore.QRect(280, 20, 681, 60))
         self.label_text.setAlignment(Qt.AlignCenter)
         self.label_text.setStyleSheet("color: #ffffff;")
+
+        self.label = QLabel(self.central_widget)
+        self.label.setGeometry(QtCore.QRect(160, 110, 971, 531))
+
         # pixmap = QPixmap('cat.jpg')
         # self.label.setPixmap(pixmap)
 
@@ -153,6 +181,15 @@ class UiMainWindow(object):
         self.actionWebCam.setStatusTip(_translate("MainWindow", "Load from WebCam"))
         self.actionWebCam.setShortcut(_translate("MainWindow", "Ctrl+W"))
 
+        self.actionShowRedChannel.setText(_translate("MainWindow", "Show Red Channel"))
+        self.actionShowRedChannel.setStatusTip(_translate("MainWindow", "Show the Red Channel of the image"))
+
+        self.actionShowBlueChannel.setText(_translate("MainWindow", "Show Blue Channel"))
+        self.actionShowBlueChannel.setStatusTip(_translate("MainWindow", "Show the Blue Channel of the image"))
+
+        self.actionShowGreenChannel.setText(_translate("MainWindow", "Show Green Channel"))
+        self.actionShowGreenChannel.setStatusTip(_translate("MainWindow", "Show the Green Channel of the image"))
+
         self.actionGet_info_about.setText(_translate("MainWindow", "Get info about"))
 
     def open_action(self):
@@ -166,6 +203,13 @@ class UiMainWindow(object):
         self.label.setPixmap(QPixmap(self.file_name[0]))
 
     def make_photo_by_web_cam(self):
+        """
+        Метод делает фотоснимок с веб-камеры пользователя.
+        Когда сделан снимок, то открывается проводник.
+        Пользователю предлагается выбрать изображение самому.
+        Снимок с веб-камеры сохраняется в ./Images/cam.png
+        :return:
+        """
         cap = cv.VideoCapture(0)
 
         # "Прогреваем" камеру, чтобы снимок не был тёмным
@@ -173,6 +217,7 @@ class UiMainWindow(object):
             cap.read()
 
         self.label_text.setText('PLEASE, READY:')
+        self.label.clear()
         QApplication.processEvents()
         time.sleep(1)
 
@@ -191,10 +236,78 @@ class UiMainWindow(object):
 
         ret, frame = cap.read()
 
-        cv.imwrite(f'{BASE_IMAGES_DIR}{BASE_NAME}', frame)
+        cv.imwrite(f'{BASE_IMAGES_DIR}{BASE_IMAGE_NAME}', frame)
         # Отключаем камеру
         cap.release()
         end_time = time.time()
         print(end_time - start_time)
         self.label_text.clear()
         self.open_action()
+
+    def show_red_channel(self):
+        """
+        Метод отображает красный канал выбранного изображения.
+        Изображение с красным каналом сохраняется в ./Images/result.png
+        :return:
+        """
+        if self.file_name is None:
+            self.label_text.setText("Please, choose the image")
+            QApplication.processEvents()
+            self.open_action()
+
+        self.label_text.clear()
+        QApplication.processEvents()
+        time.sleep(2)
+        try:
+            self.label_text.setText("Please wait")
+            QApplication.processEvents()
+            self.label.clear()
+            QApplication.processEvents()
+            time.sleep(1)
+
+            image = cv.imread(self.get_relative_path_from_absolute())
+            image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
+
+            kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
+            image = cv.filter2D(image, -1, kernel)
+
+            hsv_image = cv.cvtColor(image, cv.COLOR_RGB2HSV)
+
+            low_color_hsv_1 = (0, 120, 70)
+            high_color_hsv_1 = (10, 255, 255)
+            low_color_hsv_2 = (170, 120, 70)
+            high_color_hsv_2 = (180, 255, 255)
+            mask1 = cv.inRange(hsv_image, low_color_hsv_1, high_color_hsv_1)
+            mask2 = cv.inRange(hsv_image, low_color_hsv_2, high_color_hsv_2)
+
+            low_white = (0, 0, 200)
+            high_white = (145, 60, 255)
+
+            mask_white = cv.inRange(hsv_image, low_white, high_white)
+            mask = mask1 + mask2
+            final_mask = mask + mask_white
+
+            result = cv.imread(f'{BASE_IMAGES_DIR}{BASE_IMAGE_NAME}')
+            result = cv.bitwise_and(image, image, result, final_mask)
+
+            contours, hierarchy = cv.findContours(mask.copy(), cv.RETR_TREE,
+                                                  cv.CHAIN_APPROX_SIMPLE)
+            result = cv.drawContours(result, contours, -1, (161, 255, 255), 3, cv.LINE_AA,
+                                     hierarchy, 1)
+
+            plt.imsave(f'{BASE_IMAGES_DIR}{BASE_CHANGE_IMAGE_NAME}', result)
+
+            self.label.setPixmap(QPixmap(f'{BASE_IMAGES_DIR}{BASE_CHANGE_IMAGE_NAME}'))
+            self.label_text.clear()
+
+        except Exception as e:
+            print(e)
+
+    def get_relative_path_from_absolute(self):
+        """
+        Преобразует из абсолютного пути в относительный путь.
+        Путь - выбранное пользователем изображение
+        :return relative_path:
+        """
+        relative_path = os.path.relpath(self.file_name[0], os.getcwd())
+        return relative_path
