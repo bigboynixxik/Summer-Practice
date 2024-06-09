@@ -5,10 +5,13 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtWidgets import QLabel, QWidget, QMenuBar, QMenu, QStatusBar, QAction, QFileDialog, QApplication
+BASE_IMAGES_DIR = './Images/'
+BASE_NAME = 'cam.png'
 
 
 class UiMainWindow(object):
     def __init__(self, main_window):
+        self.file_name = None
         self.MainWindow = main_window
         self.label = None
         self.actionGet_info_about = None
@@ -30,12 +33,45 @@ class UiMainWindow(object):
         self.central_widget = QWidget(self.MainWindow)
         self.central_widget.setObjectName("centralwidget")
         self.MainWindow.setCentralWidget(self.central_widget)
+        self.central_widget.setStyleSheet("background-color: #333;")
 
         # Установка MenuBar
         self.menubar = QMenuBar(self.MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 1280, 21))
         self.menubar.setInputMethodHints(QtCore.Qt.ImhNone)
         self.menubar.setObjectName("menubar")
+        self.menubar.setStyleSheet("""
+        QMenuBar {
+            background-color: #3d3d3d; 
+            color: #ffffff;
+        }
+        QMenuBar::item {
+            background-color: #3d3d3d; 
+            color: #ffffff;
+        }
+        QMenuBar::item:selected {
+            background-color: #999999;
+            color: #ffffff;
+        }
+        QMenuBar::item:pressed {
+            background-color: #525252;
+            color: #ffffff;
+        }
+        QMenu::item {
+            background-color: #3d3d3d; 
+            color: #ffffff;
+        }
+        QMenu::item:selected {
+            background-color: #999999;
+            color: #ffffff;
+        }
+        QMenu::item:pressed {
+            background-color: #525252;
+            color: #ffffff;
+        }
+        """)
+        # self.menubar.setStyleSheet("QMenuBar::item:selected { background-color: #3d3d3d; color: #ffffff; }")
+        # self.menubar.setStyleSheet("QMenuBar::item:pressed { background-color: #aaaaaa; color: #ffffff; }")
 
         # Установка пункта File
         self.menuFile = QMenu(self.menubar)
@@ -56,6 +92,7 @@ class UiMainWindow(object):
         self.statusbar = QStatusBar(self.MainWindow)
         self.statusbar.setEnabled(True)
         self.statusbar.setObjectName("statusbar")
+        self.statusbar.setStyleSheet(" background-color: #3d3d3d; color: #ffffff;")
         self.MainWindow.setStatusBar(self.statusbar)
 
         # Обработка нажатий на кнопки File, Edit, Info
@@ -90,6 +127,7 @@ class UiMainWindow(object):
         self.label_text.setFont(QFont('Arial', 40))
         self.label_text.setGeometry(QtCore.QRect(280, 20, 681, 60))
         self.label_text.setAlignment(Qt.AlignCenter)
+        self.label_text.setStyleSheet("color: #ffffff;")
         # pixmap = QPixmap('cat.jpg')
         # self.label.setPixmap(pixmap)
 
@@ -122,9 +160,10 @@ class UiMainWindow(object):
         Метод загружает выбранное изображение из проводника
         Разрешение изображений - .jpg, *.png
         """
-        file_name = QFileDialog.getOpenFileName(parent=None, caption='Open a file', directory='./Images/',
-                                                filter='Images (*.jpg *.png)')
-        self.label.setPixmap(QPixmap(file_name[0]))
+        self.file_name = QFileDialog.getOpenFileName(parent=None, caption='Open a file', directory=BASE_IMAGES_DIR,
+                                                     filter='Images (*.jpg *.png)')
+
+        self.label.setPixmap(QPixmap(self.file_name[0]))
 
     def make_photo_by_web_cam(self):
         cap = cv.VideoCapture(0)
@@ -152,7 +191,7 @@ class UiMainWindow(object):
 
         ret, frame = cap.read()
 
-        cv.imwrite('Images/cam.png', frame)
+        cv.imwrite(f'{BASE_IMAGES_DIR}{BASE_NAME}', frame)
         # Отключаем камеру
         cap.release()
         end_time = time.time()
