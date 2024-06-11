@@ -17,6 +17,7 @@ BASE_CHANGE_IMAGE_NAME = 'result.png'
 
 class UiMainWindow(object):
     def __init__(self, main_window: QMainWindow):
+        self.label_text = None
         self.actionShowGreenChannel = None
         self.actionShowBlueChannel = None
         self.actionShowRedChannel = None
@@ -121,13 +122,15 @@ class UiMainWindow(object):
 
         self.actionShowRedChannel = QAction(self.MainWindow)
         self.actionShowRedChannel.setObjectName("showRedChannel")
-        self.actionShowRedChannel.triggered.connect(lambda: self.show_red_channel())
+        self.actionShowRedChannel.triggered.connect(lambda: self.show_channel('RED'))
 
         self.actionShowGreenChannel = QAction(self.MainWindow)
         self.actionShowGreenChannel.setObjectName("showGreenChannel")
+        self.actionShowGreenChannel.triggered.connect(lambda: self.show_channel('GREEN'))
 
         self.actionShowBlueChannel = QAction(self.MainWindow)
         self.actionShowBlueChannel.setObjectName("showBlueChannel")
+        self.actionShowBlueChannel.triggered.connect(lambda: self.show_channel('BLUE'))
 
         self.actionGet_info_about = QAction(self.MainWindow)
         self.actionGet_info_about.setObjectName("actionGet_info_about")
@@ -183,12 +186,15 @@ class UiMainWindow(object):
 
         self.actionShowRedChannel.setText(_translate("MainWindow", "Show Red Channel"))
         self.actionShowRedChannel.setStatusTip(_translate("MainWindow", "Show the Red Channel of the image"))
-
-        self.actionShowBlueChannel.setText(_translate("MainWindow", "Show Blue Channel"))
-        self.actionShowBlueChannel.setStatusTip(_translate("MainWindow", "Show the Blue Channel of the image"))
+        self.actionShowRedChannel.setShortcut(_translate("MainWindow", "Ctrl+1"))
 
         self.actionShowGreenChannel.setText(_translate("MainWindow", "Show Green Channel"))
         self.actionShowGreenChannel.setStatusTip(_translate("MainWindow", "Show the Green Channel of the image"))
+        self.actionShowGreenChannel.setShortcut(_translate("MainWindow", "Ctrl+2"))
+
+        self.actionShowBlueChannel.setText(_translate("MainWindow", "Show Blue Channel"))
+        self.actionShowBlueChannel.setStatusTip(_translate("MainWindow", "Show the Blue Channel of the image"))
+        self.actionShowBlueChannel.setShortcut(_translate("MainWindow", "Ctrl+3"))
 
         self.actionGet_info_about.setText(_translate("MainWindow", "Get info about"))
 
@@ -232,22 +238,23 @@ class UiMainWindow(object):
         self.label_text.setText('3')
         QApplication.processEvents()
 
-        start_time = time.time()
-
         ret, frame = cap.read()
 
         cv.imwrite(f'{BASE_IMAGES_DIR}{BASE_IMAGE_NAME}', frame)
         # Отключаем камеру
         cap.release()
-        end_time = time.time()
-        print(end_time - start_time)
+
         self.label_text.clear()
         self.open_action()
 
-    def show_red_channel(self):
+    def show_channel(self, color: str):
         """
-        Метод отображает красный канал выбранного изображения.
-        Изображение с красным каналом сохраняется в ./Images/result.png
+        Данный метод создаёт изображение, в котором отображён один из каналов:
+        1. Красный (color == 'RED')
+        2. Зелёный (color == 'GREEN')
+        3. Синий (color == 'BLUE')
+        Готовое изображение сохраняется в .Images/result.png
+        :param color:
         :return:
         """
         if self.file_name is None:
@@ -257,13 +264,12 @@ class UiMainWindow(object):
 
         self.label_text.clear()
         QApplication.processEvents()
-        time.sleep(2)
         try:
-            self.label_text.setText("Please wait")
+            self.label_text.setText("Please, wait")
             QApplication.processEvents()
+            time.sleep(2)
             self.label.clear()
             QApplication.processEvents()
-            time.sleep(1)
 
             image = cv.imread(self.get_relative_path_from_absolute())
             image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
@@ -273,18 +279,35 @@ class UiMainWindow(object):
 
             hsv_image = cv.cvtColor(image, cv.COLOR_RGB2HSV)
 
-            low_color_hsv_1 = (0, 120, 70)
-            high_color_hsv_1 = (10, 255, 255)
-            low_color_hsv_2 = (170, 120, 70)
-            high_color_hsv_2 = (180, 255, 255)
-            mask1 = cv.inRange(hsv_image, low_color_hsv_1, high_color_hsv_1)
-            mask2 = cv.inRange(hsv_image, low_color_hsv_2, high_color_hsv_2)
+            if color.upper() == 'RED':
+                low_color_hsv_1 = (0, 120, 70)
+                high_color_hsv_1 = (10, 255, 255)
+                low_color_hsv_2 = (170, 120, 70)
+                high_color_hsv_2 = (180, 255, 255)
 
+                mask1 = cv.inRange(hsv_image, low_color_hsv_1, high_color_hsv_1)
+                mask2 = cv.inRange(hsv_image, low_color_hsv_2, high_color_hsv_2)
+
+                mask = mask1 + mask2
+
+            elif color.upper() == 'GREEN':
+                low_color_hsv = (35, 100, 50)
+                high_color_hsv = (85, 255, 255)
+
+                mask = cv.inRange(hsv_image, low_color_hsv, high_color_hsv)
+            elif color.upper() == 'BLUE':
+                low_color_hsv = (100, 150, 0)
+                high_color_hsv = (140, 255, 255)
+
+                mask = cv.inRange(hsv_image, low_color_hsv, high_color_hsv)
+            else:
+                self.label_text.setText("Please, choose the image")
+                self.open_action()
+                return
             low_white = (0, 0, 200)
             high_white = (145, 60, 255)
-
             mask_white = cv.inRange(hsv_image, low_white, high_white)
-            mask = mask1 + mask2
+
             final_mask = mask + mask_white
 
             result = cv.imread(f'{BASE_IMAGES_DIR}{BASE_IMAGE_NAME}')
