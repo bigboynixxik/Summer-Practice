@@ -18,6 +18,8 @@ BASE_NEGATIVE_IMAGE_NAME = 'negative.png'
 
 class UiMainWindow(object):
     def __init__(self, main_window: QMainWindow):
+        self.color_channel_menubar = None
+        self.actionGaussianBlur = None
         self.actionNegative = None
         self.label_text = None
         self.actionShowGreenChannel = None
@@ -41,6 +43,7 @@ class UiMainWindow(object):
         """
         Содержит всю информацию об окне.
         Настраивается вся информация о геометрии, о меню.
+        Настраивается логика кнопок
         :return:
         """
         self.MainWindow.setObjectName("MainWindow")
@@ -122,6 +125,9 @@ class UiMainWindow(object):
         self.actionWebCam.setObjectName("actionLoad_from_WebCam")
         self.actionWebCam.triggered.connect(lambda: self.make_photo_by_web_cam())
 
+        self.color_channel_menubar = QMenu(self.menuEdit)
+        self.color_channel_menubar.setObjectName("color_channel_menubar")
+
         self.actionShowRedChannel = QAction(self.MainWindow)
         self.actionShowRedChannel.setObjectName("showRedChannel")
         self.actionShowRedChannel.triggered.connect(lambda: self.show_channel('RED'))
@@ -134,9 +140,17 @@ class UiMainWindow(object):
         self.actionShowBlueChannel.setObjectName("showBlueChannel")
         self.actionShowBlueChannel.triggered.connect(lambda: self.show_channel('BLUE'))
 
+        self.color_channel_menubar.addAction(self.actionShowRedChannel)
+        self.color_channel_menubar.addAction(self.actionShowGreenChannel)
+        self.color_channel_menubar.addAction(self.actionShowBlueChannel)
+
         self.actionNegative = QAction(self.MainWindow)
         self.actionNegative.setObjectName("negative")
         self.actionNegative.triggered.connect(lambda: self.show_negative())
+
+        self.actionGaussianBlur = QAction(self.MainWindow)
+        self.actionGaussianBlur.setObjectName("gaussianBlur")
+        self.actionGaussianBlur.triggered.connect(lambda: self.gaussian_blur())
 
         self.actionGet_info_about = QAction(self.MainWindow)
         self.actionGet_info_about.setObjectName("actionGet_info_about")
@@ -145,9 +159,7 @@ class UiMainWindow(object):
         self.menuFile.addAction(self.actionSave)
         self.menuFile.addAction(self.actionWebCam)
 
-        self.menuEdit.addAction(self.actionShowRedChannel)
-        self.menuEdit.addAction(self.actionShowGreenChannel)
-        self.menuEdit.addAction(self.actionShowBlueChannel)
+        self.menuEdit.addAction(self.color_channel_menubar.menuAction())
         self.menuEdit.addAction(self.actionNegative)
 
         self.menuInfo.addAction(self.actionGet_info_about)
@@ -173,6 +185,10 @@ class UiMainWindow(object):
         QtCore.QMetaObject.connectSlotsByName(self.MainWindow)
 
     def translate_ui(self):
+        """
+        Метод предназначен для локализации пользовательского интерфейса приложения
+        :return:
+        """
         _translate = QtCore.QCoreApplication.translate
         self.MainWindow.setWindowTitle(_translate("MainWindow", "summerPractice"))
         self.menuFile.setTitle(_translate("MainWindow", "File"))
@@ -191,6 +207,8 @@ class UiMainWindow(object):
         self.actionWebCam.setStatusTip(_translate("MainWindow", "Load from WebCam"))
         self.actionWebCam.setShortcut(_translate("MainWindow", "Ctrl+W"))
 
+        self.color_channel_menubar.setTitle(_translate("MainWindow", "Show color channel"))
+
         self.actionShowRedChannel.setText(_translate("MainWindow", "Show Red Channel"))
         self.actionShowRedChannel.setStatusTip(_translate("MainWindow", "Show the Red Channel of the image"))
         self.actionShowRedChannel.setShortcut(_translate("MainWindow", "Ctrl+1"))
@@ -207,11 +225,19 @@ class UiMainWindow(object):
         self.actionNegative.setStatusTip(_translate("MainWindow", "Show negative image"))
         self.actionNegative.setShortcut(_translate("MainWindow", "Alt+1"))
 
+        self.actionGaussianBlur.setText(_translate("MainWindow", "Gaussian Blur"))
+        self.actionGaussianBlur.setStatusTip(_translate("MainWindow", "Show Gaussian Blur the image"))
+        self.actionGaussianBlur.setShortcut(_translate("MainWindow", "Alt+2"))
+
         self.actionGet_info_about.setText(_translate("MainWindow", "Get info about"))
+
+    def gaussian_blur(self):
+        pass
 
     def show_negative(self):
         """
-        Метод сохраняет негативное изображение
+        Метод сохраняет и отображает негативное изображение
+        Негативное изображение сохраняется в ./Images/negative.png
         :return:
         """
         if self.file_name is None:
