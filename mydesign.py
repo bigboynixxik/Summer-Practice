@@ -13,10 +13,12 @@ from PyQt5.QtWidgets import QLabel, QWidget, QMenuBar, QMenu, QStatusBar, QActio
 BASE_IMAGES_DIR = './Images/'
 BASE_IMAGE_NAME = 'cam.png'
 BASE_CHANGE_IMAGE_NAME = 'result.png'
+BASE_NEGATIVE_IMAGE_NAME = 'negative.png'
 
 
 class UiMainWindow(object):
     def __init__(self, main_window: QMainWindow):
+        self.actionNegative = None
         self.label_text = None
         self.actionShowGreenChannel = None
         self.actionShowBlueChannel = None
@@ -132,6 +134,10 @@ class UiMainWindow(object):
         self.actionShowBlueChannel.setObjectName("showBlueChannel")
         self.actionShowBlueChannel.triggered.connect(lambda: self.show_channel('BLUE'))
 
+        self.actionNegative = QAction(self.MainWindow)
+        self.actionNegative.setObjectName("negative")
+        self.actionNegative.triggered.connect(lambda: self.show_negative())
+
         self.actionGet_info_about = QAction(self.MainWindow)
         self.actionGet_info_about.setObjectName("actionGet_info_about")
 
@@ -142,6 +148,7 @@ class UiMainWindow(object):
         self.menuEdit.addAction(self.actionShowRedChannel)
         self.menuEdit.addAction(self.actionShowGreenChannel)
         self.menuEdit.addAction(self.actionShowBlueChannel)
+        self.menuEdit.addAction(self.actionNegative)
 
         self.menuInfo.addAction(self.actionGet_info_about)
 
@@ -196,7 +203,32 @@ class UiMainWindow(object):
         self.actionShowBlueChannel.setStatusTip(_translate("MainWindow", "Show the Blue Channel of the image"))
         self.actionShowBlueChannel.setShortcut(_translate("MainWindow", "Ctrl+3"))
 
+        self.actionNegative.setText(_translate("MainWindow", "Show negative image"))
+        self.actionNegative.setStatusTip(_translate("MainWindow", "Show negative image"))
+        self.actionNegative.setShortcut(_translate("MainWindow", "Alt+1"))
+
         self.actionGet_info_about.setText(_translate("MainWindow", "Get info about"))
+
+    def show_negative(self):
+        """
+        Метод сохраняет негативное изображение
+        :return:
+        """
+        if self.file_name is None:
+            self.label_text.setText("Please, choose the image")
+            QApplication.processEvents()
+            self.open_action()
+
+        self.label_text.clear()
+        QApplication.processEvents()
+        try:
+            image = cv.imread(self.get_relative_path_from_absolute())
+            image = cv.bitwise_not(image)
+            cv.imwrite(f'{BASE_IMAGES_DIR}{BASE_NEGATIVE_IMAGE_NAME}', image)
+            self.label.setPixmap(QPixmap(f'{BASE_IMAGES_DIR}{BASE_NEGATIVE_IMAGE_NAME}'))
+
+        except Exception as e:
+            print(e)
 
     def open_action(self):
         """
