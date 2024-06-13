@@ -9,6 +9,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtWidgets import QLabel, QWidget, QMenuBar, QMenu, QStatusBar, QAction, QFileDialog, QApplication, \
     QMainWindow
+from Dialog import Dialog
 
 BASE_IMAGES_DIR = './Images/'
 BASE_IMAGE_NAME = 'cam.png'
@@ -161,6 +162,7 @@ class UiMainWindow(object):
 
         self.menuEdit.addAction(self.color_channel_menubar.menuAction())
         self.menuEdit.addAction(self.actionNegative)
+        self.menuEdit.addAction(self.actionGaussianBlur)
 
         self.menuInfo.addAction(self.actionGet_info_about)
 
@@ -231,8 +233,15 @@ class UiMainWindow(object):
 
         self.actionGet_info_about.setText(_translate("MainWindow", "Get info about"))
 
+    def open_dialog(self):
+        dialog = Dialog()
+        if dialog.exec_():
+            param = dialog.param1.text()
+        return param
+
     def gaussian_blur(self):
-        pass
+        param = self.open_dialog()
+        print(param)
 
     def show_negative(self):
         """
