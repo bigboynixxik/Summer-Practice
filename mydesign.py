@@ -9,12 +9,14 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtWidgets import QLabel, QWidget, QMenuBar, QMenu, QStatusBar, QAction, QFileDialog, QApplication, \
     QMainWindow
-from Dialog import Dialog
+
+from GaussianDialog import GaussianDialog
 
 BASE_IMAGES_DIR = './Images/'
 BASE_IMAGE_NAME = 'cam.png'
 BASE_CHANGE_IMAGE_NAME = 'result.png'
 BASE_NEGATIVE_IMAGE_NAME = 'negative.png'
+BASE_GAUSSIAN_BLUR_IMAGE_NAME = 'gaussian.png'
 
 
 class UiMainWindow(object):
@@ -104,7 +106,7 @@ class UiMainWindow(object):
         self.menuInfo = QMenu(self.menubar)
         self.menuInfo.setObjectName("menuInfo")
 
-        # Установка menubar 
+        # Установка menubar
         self.MainWindow.setMenuBar(self.menubar)
 
         # Создание statusBar
@@ -233,15 +235,32 @@ class UiMainWindow(object):
 
         self.actionGet_info_about.setText(_translate("MainWindow", "Get info about"))
 
-    def open_dialog(self):
-        dialog = Dialog()
+    def open_gaussian_dialog(self):
+        dialog = GaussianDialog()
         if dialog.exec_():
             param = dialog.param1.text()
-        return param
+            return param
+        return None
 
     def gaussian_blur(self):
-        param = self.open_dialog()
-        print(param)
+
+        self.check_file()
+        param = self.open_gaussian_dialog()
+
+        if not param:
+            return
+
+        try:
+            param = int(param)
+            image = cv.imread(self.get_relative_path_from_absolute())
+
+            img_blur = cv.GaussianBlur(image, (param, param), 0)
+
+            cv.imwrite(f'{BASE_IMAGES_DIR}{BASE_GAUSSIAN_BLUR_IMAGE_NAME}', img_blur)
+            self.set_absolute_path_from_relative(f'{BASE_IMAGES_DIR}{BASE_GAUSSIAN_BLUR_IMAGE_NAME}')
+            self.label.setPixmap(QPixmap(self.file_name[0]))
+        except Exception as e:
+            print(e)
 
     def show_negative(self):
         """
@@ -249,19 +268,14 @@ class UiMainWindow(object):
         Негативное изображение сохраняется в ./Images/negative.png
         :return:
         """
-        if self.file_name is None:
-            self.label_text.setText("Please, choose the image")
-            QApplication.processEvents()
-            self.open_action()
+        self.check_file()
 
-        self.label_text.clear()
-        QApplication.processEvents()
         try:
             image = cv.imread(self.get_relative_path_from_absolute())
             image = cv.bitwise_not(image)
             cv.imwrite(f'{BASE_IMAGES_DIR}{BASE_NEGATIVE_IMAGE_NAME}', image)
-            self.label.setPixmap(QPixmap(f'{BASE_IMAGES_DIR}{BASE_NEGATIVE_IMAGE_NAME}'))
-
+            self.set_absolute_path_from_relative(f'{BASE_IMAGES_DIR}{BASE_NEGATIVE_IMAGE_NAME}')
+            self.label.setPixmap(QPixmap(self.file_name[0]))
         except Exception as e:
             print(e)
 
@@ -324,13 +338,8 @@ class UiMainWindow(object):
         :param color:
         :return:
         """
-        if self.file_name is None:
-            self.label_text.setText("Please, choose the image")
-            QApplication.processEvents()
-            self.open_action()
+        self.check_file()
 
-        self.label_text.clear()
-        QApplication.processEvents()
         try:
             self.label_text.setText("Please, wait")
             QApplication.processEvents()
@@ -387,11 +396,21 @@ class UiMainWindow(object):
 
             plt.imsave(f'{BASE_IMAGES_DIR}{BASE_CHANGE_IMAGE_NAME}', result)
 
-            self.label.setPixmap(QPixmap(f'{BASE_IMAGES_DIR}{BASE_CHANGE_IMAGE_NAME}'))
+            self.set_absolute_path_from_relative(f'{BASE_IMAGES_DIR}{BASE_CHANGE_IMAGE_NAME}')
+            self.label.setPixmap(QPixmap(self.file_name[0]))
             self.label_text.clear()
 
         except Exception as e:
             print(e)
+
+    def check_file(self):
+        if self.file_name is None:
+            self.label_text.setText("Please, choose the image")
+            QApplication.processEvents()
+            self.open_action()
+
+            self.label_text.clear()
+            QApplication.processEvents()
 
     def get_relative_path_from_absolute(self):
         """
@@ -401,3 +420,13 @@ class UiMainWindow(object):
         """
         relative_path = os.path.relpath(self.file_name[0], os.getcwd())
         return relative_path
+
+    def set_absolute_path_from_relative(self, path: str):
+        """
+        Данный метод сохраняет в self.file_name[0] новый путь с изменённым изображением
+        Меняется выбранное изображение
+        :param path:
+        :return None:
+        """
+        absolute_path = os.path.abspath(path)
+        self.file_name = (absolute_path, self.file_name[1])

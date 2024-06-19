@@ -2,7 +2,7 @@ from PyQt5.QtGui import QIntValidator
 from PyQt5.QtWidgets import QPushButton, QLineEdit, QDialog, QFormLayout, QLabel, QMessageBox
 
 
-class Dialog(QDialog):
+class GaussianDialog(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Input data")
