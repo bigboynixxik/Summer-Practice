@@ -8,8 +8,9 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtWidgets import QLabel, QWidget, QMenuBar, QMenu, QStatusBar, QAction, QFileDialog, QApplication, \
-    QMainWindow
+    QMainWindow, QMessageBox
 
+from CircleDialog import CircleDialog
 from GaussianDialog import GaussianDialog
 
 BASE_IMAGES_DIR = './Images/'
@@ -17,10 +18,12 @@ BASE_IMAGE_NAME = 'cam.png'
 BASE_CHANGE_IMAGE_NAME = 'result.png'
 BASE_NEGATIVE_IMAGE_NAME = 'negative.png'
 BASE_GAUSSIAN_BLUR_IMAGE_NAME = 'gaussian.png'
+BASE_RED_CIRCLE_IMAGE_NAME = 'red_circle.png'
 
 
 class UiMainWindow(object):
     def __init__(self, main_window: QMainWindow):
+        self.actionRedCircle = None
         self.color_channel_menubar = None
         self.actionGaussianBlur = None
         self.actionNegative = None
@@ -155,6 +158,10 @@ class UiMainWindow(object):
         self.actionGaussianBlur.setObjectName("gaussianBlur")
         self.actionGaussianBlur.triggered.connect(lambda: self.gaussian_blur())
 
+        self.actionRedCircle = QAction(self.MainWindow)
+        self.actionRedCircle.setObjectName("redCircle")
+        self.actionRedCircle.triggered.connect(lambda: self.add_red_circle())
+
         self.actionGet_info_about = QAction(self.MainWindow)
         self.actionGet_info_about.setObjectName("actionGet_info_about")
 
@@ -165,6 +172,7 @@ class UiMainWindow(object):
         self.menuEdit.addAction(self.color_channel_menubar.menuAction())
         self.menuEdit.addAction(self.actionNegative)
         self.menuEdit.addAction(self.actionGaussianBlur)
+        self.menuEdit.addAction(self.actionRedCircle)
 
         self.menuInfo.addAction(self.actionGet_info_about)
 
@@ -181,9 +189,6 @@ class UiMainWindow(object):
 
         self.label = QLabel(self.central_widget)
         self.label.setGeometry(QtCore.QRect(160, 110, 971, 531))
-
-        # pixmap = QPixmap('cat.jpg')
-        # self.label.setPixmap(pixmap)
 
         self.translate_ui()
         QtCore.QMetaObject.connectSlotsByName(self.MainWindow)
@@ -233,6 +238,10 @@ class UiMainWindow(object):
         self.actionGaussianBlur.setStatusTip(_translate("MainWindow", "Show Gaussian Blur the image"))
         self.actionGaussianBlur.setShortcut(_translate("MainWindow", "Alt+2"))
 
+        self.actionRedCircle.setText(_translate("MainWindow", "Add red circle"))
+        self.actionRedCircle.setStatusTip(_translate("MainWindow", "Add the red circle on the image"))
+        self.actionRedCircle.setShortcut(_translate("MainWindow", "Alt+3"))
+
         self.actionGet_info_about.setText(_translate("MainWindow", "Get info about"))
 
     def open_gaussian_dialog(self):
@@ -241,6 +250,39 @@ class UiMainWindow(object):
             param = dialog.param1.text()
             return param
         return None
+
+    def open_red_circle_dialog(self):
+        self.check_file()
+        dialog = CircleDialog(self.file_name)
+        if dialog.exec_():
+            param1 = dialog.param1.text()
+            param2 = dialog.param2.text()
+            param3 = dialog.param3.text()
+            return param1, param2, param3
+        return None
+
+    def add_red_circle(self):
+        params = self.open_red_circle_dialog()
+
+        if not params:
+            return
+
+        try:
+            params = tuple(map(int, params))
+            # params хранит в себе (координаты по X, координаты по Y, радиус)
+
+            image = cv.imread(self.get_relative_path_from_absolute())
+
+            image_with_red_circle = cv.circle(image, center=(params[0], params[1]), radius=params[2], color=(0, 0, 255),
+                                              thickness=-1)
+
+            cv.imwrite(f'{BASE_IMAGES_DIR}{BASE_RED_CIRCLE_IMAGE_NAME}', image_with_red_circle)
+            self.set_absolute_path_from_relative(f'{BASE_IMAGES_DIR}{BASE_RED_CIRCLE_IMAGE_NAME}')
+            self.label.setPixmap(QPixmap(self.file_name[0]))
+        except Exception as e:
+            self.label_text.clear()
+            self.show_error_message("Please, choose the image")
+            print(e)
 
     def gaussian_blur(self):
 
@@ -260,6 +302,8 @@ class UiMainWindow(object):
             self.set_absolute_path_from_relative(f'{BASE_IMAGES_DIR}{BASE_GAUSSIAN_BLUR_IMAGE_NAME}')
             self.label.setPixmap(QPixmap(self.file_name[0]))
         except Exception as e:
+            self.label_text.clear()
+            self.show_error_message("Please, choose the image")
             print(e)
 
     def show_negative(self):
@@ -277,6 +321,8 @@ class UiMainWindow(object):
             self.set_absolute_path_from_relative(f'{BASE_IMAGES_DIR}{BASE_NEGATIVE_IMAGE_NAME}')
             self.label.setPixmap(QPixmap(self.file_name[0]))
         except Exception as e:
+            self.label_text.clear()
+            self.show_error_message("Please, choose the image")
             print(e)
 
     def open_action(self):
@@ -401,11 +447,13 @@ class UiMainWindow(object):
             self.label_text.clear()
 
         except Exception as e:
+            self.label_text.clear()
+            self.show_error_message("Please, choose the image")
             print(e)
 
     def check_file(self):
         if self.file_name is None:
-            self.label_text.setText("Please, choose the image")
+            self.show_error_message("Please, choose the image")
             QApplication.processEvents()
             self.open_action()
 
@@ -430,3 +478,10 @@ class UiMainWindow(object):
         """
         absolute_path = os.path.abspath(path)
         self.file_name = (absolute_path, self.file_name[1])
+
+    def show_error_message(self, message):
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Warning)
+        msg.setText(message)
+        msg.setWindowTitle("Error")
+        msg.exec_()
