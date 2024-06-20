@@ -3,7 +3,18 @@ from PyQt5.QtWidgets import QPushButton, QLineEdit, QDialog, QFormLayout, QLabel
 
 
 class CircleDialog(QDialog):
-    def __init__(self, img):
+    """
+    В данном классе создаётся диалоговое окно.
+    Обрабатывается информация для создания красного круга на изображении
+    """
+
+    def __init__(self, img: tuple):
+        """
+        В методе инициализируется класс и обрабатываются все необходимые поля.
+        От пользователя получаем 3 параметра:
+        Координаты центра по X, Y, радиус круга.
+        :param img:
+        """
         super().__init__()
         self.setWindowTitle("Input data for circle")
         pixmap = QPixmap(img[0])
@@ -42,6 +53,11 @@ class CircleDialog(QDialog):
         self.setLayout(self.layout)
 
     def check_input(self):
+        """
+        Проверяются все введённые пользователем данные.
+        Они должны быть числами
+        :return:
+        """
         input_text_1 = self.param1.text()
         input_text_2 = self.param2.text()
         input_text_3 = self.param3.text()
@@ -53,7 +69,12 @@ class CircleDialog(QDialog):
         # если все хорошо, закрыть диалоговое окно
         self.accept()
 
-    def show_error_message(self, message):
+    def show_error_message(self, message: str):
+        """
+        В случае ошибки, выводится сообщение о ней
+        :param message:
+        :return:
+        """
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Warning)
         msg.setText(message)

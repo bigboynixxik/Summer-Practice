@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import QLabel, QWidget, QMenuBar, QMenu, QStatusBar, QActio
 
 from CircleDialog import CircleDialog
 from GaussianDialog import GaussianDialog
+from InfoWindow import InfoWindow
 
 BASE_IMAGES_DIR = './Images/'
 BASE_IMAGE_NAME = 'cam.png'
@@ -124,9 +125,6 @@ class UiMainWindow(object):
         self.actionOpen.setObjectName("actionOpen")
         self.actionOpen.triggered.connect(lambda: self.open_action())
 
-        self.actionSave = QAction(self.MainWindow)
-        self.actionSave.setObjectName("actionSave")
-
         self.actionWebCam = QAction(self.MainWindow)
         self.actionWebCam.setObjectName("actionLoad_from_WebCam")
         self.actionWebCam.triggered.connect(lambda: self.make_photo_by_web_cam())
@@ -164,6 +162,7 @@ class UiMainWindow(object):
 
         self.actionGet_info_about = QAction(self.MainWindow)
         self.actionGet_info_about.setObjectName("actionGet_info_about")
+        self.actionGet_info_about.triggered.connect(lambda: self.get_info_about())
 
         self.menuFile.addAction(self.actionOpen)
         self.menuFile.addAction(self.actionSave)
@@ -208,10 +207,6 @@ class UiMainWindow(object):
         self.actionOpen.setStatusTip(_translate("MainWindow", "Open a file"))
         self.actionOpen.setShortcut(_translate("MainWindow", "Ctrl+N"))
 
-        self.actionSave.setText(_translate("MainWindow", "Save"))
-        self.actionSave.setStatusTip(_translate("MainWindow", "Save a file"))
-        self.actionSave.setShortcut(_translate("MainWindow", "Ctrl+S"))
-
         self.actionWebCam.setText(_translate("MainWindow", "Load from WebCam"))
         self.actionWebCam.setStatusTip(_translate("MainWindow", "Load from WebCam"))
         self.actionWebCam.setShortcut(_translate("MainWindow", "Ctrl+W"))
@@ -244,7 +239,22 @@ class UiMainWindow(object):
 
         self.actionGet_info_about.setText(_translate("MainWindow", "Get info about"))
 
+    def get_info_about(self):
+        """
+        Метод открывает диалоговое окно, в котором содержится информация о программе
+        :return:
+        """
+        dialog = InfoWindow()
+        if dialog.exec_():
+            print('hu')
+        return None
+
     def open_gaussian_dialog(self):
+        """
+        Метод открывает диалоговое окно, в котором пользователь вводит параметры для
+        размытия по гауссу
+        :return:
+        """
         dialog = GaussianDialog()
         if dialog.exec_():
             param = dialog.param1.text()
@@ -252,6 +262,11 @@ class UiMainWindow(object):
         return None
 
     def open_red_circle_dialog(self):
+        """
+        Метод открывает диалоговое окно, в котором пользователь вводит параметры для
+        создания красного круга на изображении
+        :return:
+        """
         self.check_file()
         dialog = CircleDialog(self.file_name)
         if dialog.exec_():
@@ -262,6 +277,10 @@ class UiMainWindow(object):
         return None
 
     def add_red_circle(self):
+        """
+        Метод добавляет красный круг с заданными параметрами пользователем
+        :return:
+        """
         params = self.open_red_circle_dialog()
 
         if not params:
@@ -285,7 +304,10 @@ class UiMainWindow(object):
             print(e)
 
     def gaussian_blur(self):
-
+        """
+        Метод использует размытие изображения по гауссу
+        :return:
+        """
         self.check_file()
         param = self.open_gaussian_dialog()
 
@@ -330,8 +352,10 @@ class UiMainWindow(object):
         Метод загружает выбранное изображение из проводника
         Разрешение изображений - .jpg, *.png
         """
-        self.file_name = QFileDialog.getOpenFileName(parent=None, caption='Open a file', directory=BASE_IMAGES_DIR,
-                                                     filter='Images (*.jpg *.png)')
+        self.file_name = ('', '')
+        while self.file_name == ('', ''):
+            self.file_name = QFileDialog.getOpenFileName(parent=None, caption='Open a file', directory=BASE_IMAGES_DIR,
+                                                         filter='Images (*.jpg *.png)')
 
         self.label.setPixmap(QPixmap(self.file_name[0]))
 
@@ -452,7 +476,11 @@ class UiMainWindow(object):
             print(e)
 
     def check_file(self):
-        if self.file_name is None:
+        """
+        Метод проверяет на то, чтобы self.file_name не был None или без пути
+        :return:
+        """
+        if self.file_name is None or self.file_name == ('', ''):
             self.show_error_message("Please, choose the image")
             QApplication.processEvents()
             self.open_action()
@@ -471,7 +499,7 @@ class UiMainWindow(object):
 
     def set_absolute_path_from_relative(self, path: str):
         """
-        Данный метод сохраняет в self.file_name[0] новый путь с изменённым изображением
+        Данный метод сохраняет в self.file_name[0] новый путь с изменённым изображением.
         Меняется выбранное изображение
         :param path:
         :return None:
@@ -479,7 +507,13 @@ class UiMainWindow(object):
         absolute_path = os.path.abspath(path)
         self.file_name = (absolute_path, self.file_name[1])
 
-    def show_error_message(self, message):
+    def show_error_message(self, message: str):
+        """
+        На экран выводится сообщение об ошибке, с просьбой к пользователю, которая хранится в
+        message: str.
+        :param message:
+        :return:
+        """
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Warning)
         msg.setText(message)

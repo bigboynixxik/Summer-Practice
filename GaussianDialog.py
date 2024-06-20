@@ -3,7 +3,16 @@ from PyQt5.QtWidgets import QPushButton, QLineEdit, QDialog, QFormLayout, QLabel
 
 
 class GaussianDialog(QDialog):
+    """
+    В данном классе создаётся диалоговое окно.
+    Обрабатывается информация для создания размытия по Гауссу
+    """
+
     def __init__(self):
+        """
+        В методе инициализируется класс и обрабатываются все необходимые поля.
+        Принимается один параметр - размер ядра
+        """
         super().__init__()
         self.setWindowTitle("Input data")
 
@@ -14,7 +23,7 @@ class GaussianDialog(QDialog):
 
         self.param1 = QLineEdit()
         odd_number_validator = QIntValidator()
-        odd_number_validator.setRange(1, 1000000)  # установите допустимый диапазон по нечетным числам
+        odd_number_validator.setRange(1, 1000000)
         self.param1.setValidator(odd_number_validator)
 
         self.layout.addRow("Kernel size", self.param1)
@@ -27,6 +36,11 @@ class GaussianDialog(QDialog):
         self.setLayout(self.layout)
 
     def check_input(self):
+        """
+        Проверяются введённые данные.
+        Размер ядра должен быть нечётным числом
+        :return:
+        """
         input_text = self.param1.text()
         if not input_text.isdigit():
             self.show_error_message("Please enter a valid integer.")
@@ -40,7 +54,12 @@ class GaussianDialog(QDialog):
         # если все хорошо, закрыть диалоговое окно
         self.accept()
 
-    def show_error_message(self, message):
+    def show_error_message(self, message: str):
+        """
+        В случае ошибки, выводится сообщение о ней
+        :param message:
+        :return:
+        """
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Warning)
         msg.setText(message)
