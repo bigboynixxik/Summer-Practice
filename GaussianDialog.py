@@ -23,7 +23,7 @@ class GaussianDialog(QDialog):
 
         self.param1 = QLineEdit()
         odd_number_validator = QIntValidator()
-        odd_number_validator.setRange(1, 1000000)
+        odd_number_validator.setRange(1, 501)
         self.param1.setValidator(odd_number_validator)
 
         self.layout.addRow("Kernel size", self.param1)

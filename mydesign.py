@@ -238,6 +238,8 @@ class UiMainWindow(object):
         self.actionRedCircle.setShortcut(_translate("MainWindow", "Alt+3"))
 
         self.actionGet_info_about.setText(_translate("MainWindow", "Get info about"))
+        self.actionGet_info_about.setStatusTip(_translate("MainWindow", "Get info about the program"))
+        self.actionGet_info_about.setShortcut(_translate("MainWindow", "Alt+4"))
 
     def get_info_about(self):
         """
@@ -246,7 +248,7 @@ class UiMainWindow(object):
         """
         dialog = InfoWindow()
         if dialog.exec_():
-            print('hu')
+            pass
         return None
 
     def open_gaussian_dialog(self):
@@ -367,36 +369,44 @@ class UiMainWindow(object):
         Снимок с веб-камеры сохраняется в ./Images/cam.png
         :return:
         """
-        cap = cv.VideoCapture(0)
+        try:
+            cap = cv.VideoCapture(0)
 
-        # "Прогреваем" камеру, чтобы снимок не был тёмным
-        for i in range(30):
-            cap.read()
+            # "Прогреваем" камеру, чтобы снимок не был тёмным
+            for i in range(30):
+                cap.read()
 
-        self.label_text.setText('PLEASE, READY:')
-        self.label.clear()
-        QApplication.processEvents()
-        time.sleep(1)
+            self.label_text.setText('PLEASE, READY:')
+            self.label.clear()
+            QApplication.processEvents()
+            time.sleep(1)
 
-        self.label_text.setText('1')
-        QApplication.processEvents()
-        time.sleep(1)
+            self.label_text.setText('1')
+            QApplication.processEvents()
+            time.sleep(1)
 
-        self.label_text.setText('2')
-        QApplication.processEvents()
-        time.sleep(1)
+            self.label_text.setText('2')
+            QApplication.processEvents()
+            time.sleep(1)
 
-        self.label_text.setText('3')
-        QApplication.processEvents()
+            self.label_text.setText('3')
+            QApplication.processEvents()
 
-        ret, frame = cap.read()
+            ret, frame = cap.read()
 
-        cv.imwrite(f'{BASE_IMAGES_DIR}{BASE_IMAGE_NAME}', frame)
-        # Отключаем камеру
-        cap.release()
-
-        self.label_text.clear()
-        self.open_action()
+            cv.imwrite(f'{BASE_IMAGES_DIR}{BASE_IMAGE_NAME}', frame)
+            # Отключаем камеру
+            cap.release()
+            self.label_text.clear()
+            self.open_action()
+        except Exception as e:
+            print(e)
+            self.show_error_message("Please check the webcam!" +
+                                    "Possible problems:\n" +
+                                    "Check if the camera is connected to the device;\n" +
+                                    "If it is connected, check if it is working properly;\n" +
+                                    "Try reinstalling the drivers;\n" +
+                                    "Try restarting the system and/or program.")
 
     def show_channel(self, color: str):
         """
